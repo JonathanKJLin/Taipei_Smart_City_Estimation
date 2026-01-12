@@ -1,6 +1,48 @@
 # 系統架構文檔
 
-> 政府估驗計價自動化驗算系統 - 技術架構與設計
+> 政府估驗計價自動化驗算系統 - 技術架構與設計  
+> 遵循嚴謹的 5 步驟流程架構
+
+---
+
+## 🎯 5 步驟流程架構
+
+本系統嚴格遵循以下 5 個步驟，確保每個階段職責清晰、模組獨立：
+
+### Step 1: Data Extraction（資料擷取）
+- **技術**: Azure Document Intelligence (ICR)
+- **職責**: 文件掃描、表格識別、欄位擷取
+- **模組**: `services/step1_extraction/`
+- **輸入**: PDF/圖片文件
+- **輸出**: 結構化的 ICR 資料
+
+### Step 2: Context Understanding（語境理解）
+- **技術**: OpenAI GPT-5 (NLP/Reasoning)
+- **職責**: 語義分析、欄位對應、邏輯識別
+- **模組**: `services/step2_understanding/`
+- **輸入**: ICR 資料
+- **輸出**: 語義理解後的結構化資料
+
+### Step 3: Standardization（標準化處理）
+- **技術**: Python Data Processing
+- **職責**: 資料清洗、格式標準化、Schema 驗證
+- **模組**: `services/step3_standardization/`
+- **輸入**: 理解後的資料
+- **輸出**: 標準化的 JSON 資料
+
+### Step 4: Validation Engine（驗算引擎）
+- **技術**: Python Rule Engine
+- **職責**: 金額加總、累計檢核、付款條件驗證
+- **模組**: `services/step4_validation/`
+- **輸入**: 標準化資料
+- **輸出**: 驗算結果報告
+
+### Step 5: Feedback Loop（回饋循環）
+- **技術**: Machine Learning / Rule Optimization
+- **職責**: 收集回饋、優化模型、持續學習
+- **模組**: `services/step5_feedback/`
+- **輸入**: 人工審核回饋
+- **輸出**: 優化建議與更新
 
 ---
 
@@ -249,10 +291,32 @@ Django 4.x (Web Framework)
     │   ├─ ICR Analysis
     │   └─ Validation Tasks
     │
-    ├─ Services Layer
-    │   ├─ Azure DI Service
-    │   ├─ Azure GPT Service
-    │   └─ Validation Services
+    ├─ Services Layer (5-Step Architecture)
+    │   ├─ Step 1: Data Extraction
+    │   │   ├─ Azure DI Service (ICR)
+    │   │   └─ PDF Handler
+    │   │
+    │   ├─ Step 2: Context Understanding
+    │   │   ├─ GPT Service (NLP)
+    │   │   └─ Prompt Builder
+    │   │
+    │   ├─ Step 3: Standardization
+    │   │   ├─ Data Normalizer
+    │   │   └─ Schema Validator
+    │   │
+    │   ├─ Step 4: Validation Engine
+    │   │   ├─ Amount Engine
+    │   │   ├─ Accumulation Checker
+    │   │   ├─ Payment Condition Engine
+    │   │   └─ Rules Engine
+    │   │
+    │   ├─ Step 5: Feedback Loop
+    │   │   ├─ Feedback Processor
+    │   │   └─ Model Optimizer
+    │   │
+    │   └─ Common Utilities
+    │       ├─ Confidence Calculator
+    │       └─ Error Handler
     │
     └─ Data Layer
         ├─ PostgreSQL (主資料庫)
