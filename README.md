@@ -53,7 +53,7 @@
 
 ```bash
 # 克隆專案
-git clone https://github.com/JonathanKJLin/-.git
+git clone https://github.com/JonathanKJLin/Taipei_Smart_City_Estimation.git
 cd gov_estimation_system
 
 # 建立虛擬環境
