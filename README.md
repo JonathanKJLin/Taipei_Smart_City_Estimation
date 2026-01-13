@@ -260,7 +260,7 @@ redis-cli ping  # 應回應 PONG
 
 **專案負責人**: EY 團隊  
 **客戶單位**: 台北市政府  
-**GitHub**: [https://github.com/JonathanKJLin/-](https://github.com/JonathanKJLin/-)
+**GitHub**: https://github.com/JonathanKJLin/Taipei_Smart_City_Estimation.git
 
 ---
 
