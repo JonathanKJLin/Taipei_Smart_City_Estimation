@@ -1,101 +1,75 @@
 {
   "document_type": "估驗計價單",
-  "document_id": "EST-2026-001",
-  "period_number": 3,
-  "date": "2026-01-12",
-  "contract_info": {
-    "contract_number": "1100-A123",
-    "contract_name": "台北市○○工程",
-    "contract_amount": 50000000,
-    "contractor": "ABC營造股份有限公司",
-    "owner": "台北市政府工務局",
-    "start_date": "2025-06-01",
-    "end_date": "2026-12-31"
+  "document_id": "EST-2026-TPE-001",
+  "document_info": {
+    "agency_name": "台北市政府工務局",
+    "period_number": 3,
+    "estimation_period": "2026-01-01 至 2026-01-31"
   },
-  "items": [
-    {
-      "item_no": "1",
-      "description": "鋼筋工程",
-      "unit": "噸",
-      "quantity": 120.5,
-      "unit_price": 25000,
-      "amount": 3012500,
-      "previous_quantity": 250.0,
-      "total_quantity": 370.5,
-      "remarks": ""
-    },
-    {
-      "item_no": "2",
-      "description": "混凝土工程",
-      "unit": "立方公尺",
-      "quantity": 80.0,
-      "unit_price": 3500,
-      "amount": 280000,
-      "previous_quantity": 150.0,
-      "total_quantity": 230.0,
-      "remarks": ""
-    },
-    {
-      "item_no": "3",
-      "description": "模板工程",
-      "unit": "平方公尺",
-      "quantity": 500.0,
-      "unit_price": 800,
-      "amount": 400000,
-      "previous_quantity": 1200.0,
-      "total_quantity": 1700.0,
-      "remarks": ""
-    }
-  ],
-  "period_amount": 3692500,
-  "previous_accumulation": 15000000,
-  "current_accumulation": 18692500,
-  "payment_conditions": [
-    {
-      "condition_text": "工程完成35%後可請領第三期款",
-      "parsed_condition": {
-        "trigger_type": "progress",
-        "threshold": 35,
-        "payment_phase": 3
-      }
-    }
-  ],
-  "validation_results": {
-    "amount_validation": {
-      "vertical_sum": {
-        "status": "pass",
-        "message": "直式加總驗證通過"
+  "contract_financials": {
+    "original_amount": 50000000,
+    "current_total_amount": 52000000,
+    "prepayment_total": 10000000
+  },
+  "current_period_data": {
+    "C": 8500000,
+    "D": 150000,
+    "E": 200000,
+    "F": 850000,
+    "G": 2000000,
+    "H": 5600000,
+    "K": 5600000
+  },
+  "logic_config": {
+    "formulas": [
+      {
+        "target_field": "H",
+        "expression": "C + D - E - F - G",
+        "rounding_rule": "round"
       },
-      "horizontal_calc": {
-        "status": "pass",
-        "message": "橫式計算驗證通過"
+      {
+        "target_field": "K",
+        "expression": "H",
+        "rounding_rule": "round"
       }
-    },
-    "accumulation_validation": {
-      "logic_check": {
-        "status": "pass",
-        "message": "累計邏輯檢核通過"
+    ],
+    "thresholds": {
+      "prepayment_return_range": {
+        "min": 0.20,
+        "max": 0.80,
+        "description": "預付款扣回區間為工程進度20%-80%"
       },
-      "contract_limit": {
-        "status": "pass",
-        "message": "未超過合約總額",
-        "usage_percentage": 37.385
+      "retention_rate": {
+        "value": 0.10,
+        "description": "保留款比例10%"
       }
-    },
-    "payment_condition_validation": {
-      "status": "pass",
-      "message": "符合付款條件",
-      "actual_progress": 37.385
     }
   },
+  "validation_log": [
+    {
+      "field": "H",
+      "extracted_value": 5600000,
+      "calculated_value": 5600000,
+      "is_match": true,
+      "delta": 0
+    },
+    {
+      "field": "K",
+      "extracted_value": 5600000,
+      "calculated_value": 5600000,
+      "is_match": true,
+      "delta": 0
+    }
+  ],
   "confidence_scores": {
-    "overall": 0.92,
-    "icr_accuracy": 0.95,
-    "field_mapping": 0.90,
-    "logic_understanding": 0.91
+    "overall": 0.94,
+    "icr_accuracy": 0.96,
+    "field_mapping": 0.92,
+    "logic_understanding": 0.95
   },
   "metadata": {
-    "processed_timestamp": "2026-01-12T10:30:00Z",
-    "system_version": "0.1.0"
+    "processed_timestamp": "2026-01-14T10:30:00Z",
+    "system_version": "1.0.0",
+    "processor": "Azure_DI_GPT5_Pipeline"
   }
 }

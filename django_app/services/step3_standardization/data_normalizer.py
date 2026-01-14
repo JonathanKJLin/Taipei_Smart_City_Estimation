@@ -39,8 +39,11 @@ class DataNormalizer:
         try:
             normalized = {
                 "document_type": document_type,
-                "normalized_at": datetime.now().isoformat(),
-                "version": "1.0"
+                "metadata": {
+                    "normalized_at": datetime.now().isoformat(),
+                    "system_version": "1.0",
+                    "processor": "DataNormalizer"
+                }
             }
             
             # 標準化基本資訊
@@ -49,23 +52,60 @@ class DataNormalizer:
                     raw_data["document_id"]
                 )
             
-            # 標準化合約資訊
+            # 標準化文件資訊 (document_info)
+            if "document_info" in raw_data:
+                normalized["document_info"] = raw_data["document_info"]
+                # 標準化估驗期間的日期格式
+                if "estimation_period" in normalized["document_info"]:
+                    normalized["document_info"]["estimation_period"] = str(
+                        normalized["document_info"]["estimation_period"]
+                    )
+            
+            # 標準化合約財務資訊 (contract_financials)
+            if "contract_financials" in raw_data:
+                normalized["contract_financials"] = {}
+                for key, value in raw_data["contract_financials"].items():
+                    if isinstance(value, (int, float, str)) and key.endswith("_amount"):
+                        normalized["contract_financials"][key] = self.normalize_amount(value)
+                    else:
+                        normalized["contract_financials"][key] = value
+            
+            # 標準化本期數據 (current_period_data)
+            if "current_period_data" in raw_data:
+                normalized["current_period_data"] = {}
+                for key, value in raw_data["current_period_data"].items():
+                    normalized["current_period_data"][key] = self.normalize_amount(value)
+            
+            # 標準化邏輯配置 (logic_config)
+            if "logic_config" in raw_data:
+                normalized["logic_config"] = raw_data["logic_config"]
+            
+            # 標準化驗算日誌 (validation_log)
+            if "validation_log" in raw_data:
+                normalized["validation_log"] = raw_data["validation_log"]
+            
+            # 標準化信心分數 (confidence_scores)
+            if "confidence_scores" in raw_data:
+                normalized["confidence_scores"] = raw_data["confidence_scores"]
+            
+            # 舊版 Schema 兼容性處理（如果存在舊欄位，進行映射）
+            # 標準化合約資訊（舊版）
             if "contract_info" in raw_data:
                 normalized["contract_info"] = self.normalize_contract_info(
                     raw_data["contract_info"]
                 )
             
-            # 標準化項目明細
+            # 標準化項目明細（舊版）
             if "items" in raw_data:
                 normalized["items"] = self.normalize_items(raw_data["items"])
             
-            # 標準化金額
+            # 標準化金額（舊版）
             amount_fields = ["period_amount", "previous_accumulation", "current_accumulation"]
             for field in amount_fields:
                 if field in raw_data:
                     normalized[field] = self.normalize_amount(raw_data[field])
             
-            # 標準化日期
+            # 標準化日期（舊版）
             if "date" in raw_data:
                 normalized["date"] = self.normalize_date(raw_data["date"])
             

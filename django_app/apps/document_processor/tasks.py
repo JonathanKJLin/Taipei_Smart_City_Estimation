@@ -122,7 +122,7 @@ def process_document_task(document_id: int):
         validation_results['accumulation_validation'] = accumulation_checker.validate_all(
             current_period=standardized_data,
             previous_periods=None,  # TODO: 查詢歷史資料
-            contract_info=standardized_data.get('contract_info')
+            contract_info=standardized_data.get('contract_financials')  # 使用新的欄位名稱
         )
         
         # 4.3 付款條件驗證

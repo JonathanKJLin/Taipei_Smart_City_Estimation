@@ -199,15 +199,31 @@ class SchemaValidator:
         """
         errors = []
         
+        # 檢查資料是否為空
+        if not data:
+            errors.append("文件資料為空")
+            return False, errors
+        
         # 基本必要欄位
         required_fields = ["document_type", "document_id"]
         for field in required_fields:
             if field not in data:
                 errors.append(f"缺少基本欄位: {field}")
         
-        # 檢查資料是否為空
-        if not data:
-            errors.append("文件資料為空")
+        # 針對估驗計價單，檢查核心結構
+        if data.get("document_type") == "估驗計價單":
+            estimation_required = ["document_info", "current_period_data"]
+            for field in estimation_required:
+                if field not in data:
+                    errors.append(f"估驗計價單缺少必要區塊: {field}")
+            
+            # 檢查 current_period_data 是否包含基本欄位
+            if "current_period_data" in data:
+                period_data = data["current_period_data"]
+                if not isinstance(period_data, dict):
+                    errors.append("current_period_data 必須是物件類型")
+                elif not period_data:
+                    errors.append("current_period_data 不能為空")
         
         return len(errors) == 0, errors
     

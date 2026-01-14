@@ -150,7 +150,7 @@ class AccumulationChecker:
         
         Args:
             current_period: 本期資料
-            contract_info: 合約資訊
+            contract_info: 合約資訊 (可以是 contract_info 或 contract_financials)
         
         Returns:
             Dict: 檢核結果
@@ -166,7 +166,11 @@ class AccumulationChecker:
                     "message": "無合約資訊，無法檢核上限"
                 }
             
+            # 兼容新舊 Schema
+            # 新 Schema: current_total_amount (變更後契約金額)
+            # 舊 Schema: contract_amount
             contract_amount = Decimal(str(
+                contract_info.get("current_total_amount") or 
                 contract_info.get("contract_amount", 0)
             ))
             

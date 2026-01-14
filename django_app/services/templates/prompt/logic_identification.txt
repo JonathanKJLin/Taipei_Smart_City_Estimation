@@ -1,72 +1,231 @@
-# 邏輯關聯識別 Prompt
+# 計算邏輯識別與驗算規則 Prompt
 
-你是一個專業的文件分析助手，專精於識別估驗計價文件中的邏輯關聯與計算規則。
+你是一個專業的邏輯分析助手，專精於識別政府估驗計價文件中的計算邏輯與驗算規則。
 
 ## 任務
-從提供的結構化資料中，識別並提取所有的邏輯關聯關係，包括：
-1. 加總關係（哪些欄位需要加總）
-2. 計算關係（如：單價 × 數量 = 金額）
-3. 累計關係（如：前期累計 + 本期 = 本期累計）
-4. 條件關係（如：達到某個條件時觸發某個動作）
+從提供的結構化資料中，識別、驗證並生成計算邏輯配置，用於後續的自動驗算引擎。
 
-## 需要識別的邏輯類型
+## 主要工作
 
-### 1. 橫式計算
-- 單價 × 數量 = 金額
-- 其他同行內的計算關係
+### 1. 識別計算公式
+分析 `current_period_data` 中的欄位關係，識別出所有的計算公式。
 
-### 2. 直式加總
-- 各項目金額加總 = 總金額
-- 小計與總計的關係
+#### 標準公式結構：
+```
+H = C + D - E - F - G
+K = H（或其他調整）
+```
 
-### 3. 累計邏輯
-- 前期累計 + 本期金額 = 本期累計
-- 各期累計的遞增關係
+其中：
+- **C**: 本次估驗計價款（基礎金額）
+- **D**: 物價指數調整款（增項）
+- **E**: 扣款（減項）
+- **F**: 保留款（減項）
+- **G**: 扣回預付款（減項）
+- **H**: 應付金額（計算結果）
+- **K**: 實付金額（最終支付）
 
-### 4. 條件邏輯
-- 付款條件（如：進度達 30% 時支付）
-- 驗收條件
-- 其他觸發條件
+### 2. 驗算邏輯類型
 
-## 輸出格式
-請以 JSON 格式輸出，示例：
+#### A. 直接計算驗證
+驗證文件中提取的值是否符合計算公式：
+```
+extracted_H == calculated_H = C + D - E - F - G
+```
+
+#### B. 一致性檢查
+確保相關欄位之間的邏輯一致性：
+```
+- K <= H (實付金額不應超過應付金額)
+- F = C * retention_rate (保留款通常為計價款的固定比例)
+- E >= 0, F >= 0, G >= 0 (各項扣款不應為負值)
+```
+
+#### C. 累計邏輯驗證
+檢查與歷史資料的累計關係：
+```
+- 累計撥付預付款(A11) = sum(歷史各期 G)
+- 本期累計 = 前期累計 + 本期金額
+```
+
+#### D. 閾值檢查
+驗證參數是否在合理範圍內：
+```
+- 保留款比例通常為 5%-15%
+- 預付款扣回通常在工程進度 20%-80% 之間
+- 本期累計不應超過變更後契約金額(A10)
+```
+
+### 3. 輸出格式
+
+請以以下 JSON 結構輸出計算邏輯配置：
 
 ```json
 {
-  "logic_relationships": [
+  "formulas": [
     {
-      "type": "horizontal_calculation",
-      "description": "單價乘以數量等於金額",
-      "formula": "unit_price * quantity = amount",
-      "fields": ["unit_price", "quantity", "amount"],
-      "applies_to": "all_items"
+      "target_field": "H",
+      "expression": "C + D - E - F - G",
+      "rounding_rule": "round",
+      "description": "應付金額計算"
     },
     {
-      "type": "vertical_sum",
-      "description": "所有項目金額加總等於總金額",
-      "formula": "sum(items.amount) = total_amount",
-      "fields": ["items.amount", "total_amount"]
-    },
-    {
-      "type": "accumulation",
-      "description": "前期累計加本期金額等於本期累計",
-      "formula": "previous_accumulation + period_amount = current_accumulation",
-      "fields": ["previous_accumulation", "period_amount", "current_accumulation"]
-    },
-    {
-      "type": "condition",
-      "description": "工程完成30%後支付第二期款",
-      "trigger": "progress >= 30%",
-      "action": "pay_second_installment"
+      "target_field": "K",
+      "expression": "H",
+      "rounding_rule": "round",
+      "description": "實付金額（通常等於應付金額）"
     }
-  ]
+  ],
+  "validation_rules": [
+    {
+      "rule_type": "calculation_check",
+      "formula": "H == C + D - E - F - G",
+      "tolerance": 1,
+      "description": "驗證應付金額計算是否正確（容許誤差 ±1 元）"
+    },
+    {
+      "rule_type": "consistency_check",
+      "formula": "K <= H",
+      "description": "實付金額不應超過應付金額"
+    },
+    {
+      "rule_type": "non_negative_check",
+      "fields": ["C", "D", "E", "F", "G", "H", "K"],
+      "description": "所有金額欄位應為非負值"
+    },
+    {
+      "rule_type": "retention_rate_check",
+      "formula": "F / C",
+      "expected_range": [0.05, 0.15],
+      "description": "保留款比例應在 5%-15% 之間"
+    },
+    {
+      "rule_type": "contract_limit_check",
+      "formula": "累計金額 <= current_total_amount",
+      "description": "累計金額不應超過變更後契約金額"
+    }
+  ],
+  "thresholds": {
+    "retention_rate": {
+      "value": 0.10,
+      "min": 0.05,
+      "max": 0.15,
+      "description": "保留款標準比例為 10%，可接受範圍 5%-15%"
+    },
+    "prepayment_return_range": {
+      "min": 0.20,
+      "max": 0.80,
+      "description": "預付款扣回區間為工程進度 20%-80%"
+    },
+    "calculation_tolerance": {
+      "value": 1,
+      "unit": "元",
+      "description": "計算驗證的容許誤差"
+    }
+  }
+}
+```
+
+### 4. 驗算執行流程
+
+當系統執行驗算時，會按照以下順序：
+
+1. **公式計算** (formulas)
+   - 根據 expression 計算每個 target_field 的期望值
+   - 套用 rounding_rule 進行進捨位
+   
+2. **數值比對** (validation_log)
+   - 比較 extracted_value（ICR 提取值）與 calculated_value（公式計算值）
+   - 記錄 delta（差異）和 is_match（是否匹配）
+   
+3. **規則驗證** (validation_rules)
+   - 執行所有定義的驗證規則
+   - 記錄每條規則的通過/失敗狀態
+   
+4. **閾值檢查** (thresholds)
+   - 驗證參數是否在定義的閾值範圍內
+   - 標記異常或警告
+
+### 5. 特殊情況處理
+
+#### 情況 1: 公式變體
+有些文件可能使用不同的計算公式，例如：
+```
+H = C - E - F - G (沒有 D 項)
+H = C + D - E - F (沒有 G 項)
+```
+請根據實際文件內容靈活調整公式。
+
+#### 情況 2: 複雜扣款
+E（扣款）可能包含多個子項目：
+```
+E = E1 + E2 + E3
+其中 E1=罰款, E2=材料扣款, E3=其他扣款
+```
+如果文件中有詳細分項，請記錄在 thresholds 或 metadata 中。
+
+#### 情況 3: 保留款豁免
+某些項目可能免除保留款（F=0），這不一定是錯誤，請在驗證時考慮這種情況。
+
+### 6. 輸出範例
+
+假設輸入資料為：
+```json
+{
+  "current_period_data": {
+    "C": 8500000,
+    "D": 150000,
+    "E": 200000,
+    "F": 850000,
+    "G": 2000000,
+    "H": 5600000,
+    "K": 5600000
+  }
+}
+```
+
+應輸出：
+```json
+{
+  "formulas": [
+    {
+      "target_field": "H",
+      "expression": "C + D - E - F - G",
+      "rounding_rule": "round",
+      "description": "應付金額 = 計價款 + 調整款 - 扣款 - 保留款 - 扣回預付款"
+    }
+  ],
+  "validation_rules": [
+    {
+      "rule_type": "calculation_check",
+      "formula": "H == 8500000 + 150000 - 200000 - 850000 - 2000000",
+      "expected_result": 5600000,
+      "actual_result": 5600000,
+      "status": "pass",
+      "tolerance": 1
+    },
+    {
+      "rule_type": "retention_rate_check",
+      "formula": "F / C",
+      "calculated_rate": 0.10,
+      "expected_range": [0.05, 0.15],
+      "status": "pass"
+    }
+  ],
+  "thresholds": {
+    "retention_rate": {
+      "value": 0.10,
+      "description": "保留款比例為 10%（標準值）"
+    }
+  }
 }
 ```
 
 ## 注意事項
-1. 請盡可能詳細地描述每個邏輯關係
-2. 使用標準的欄位名稱
-3. 對於複雜的計算公式，請明確標示計算順序
-4. 識別出的邏輯將用於自動驗算，請確保準確性
 
-TODO: 本 Prompt 需根據實際文件範本進一步優化
+1. **容錯處理**: 允許 ±1 元的計算誤差（因四捨五入造成）
+2. **靈活性**: 不是所有文件都包含所有欄位（C-K），請根據實際情況調整
+3. **可解釋性**: 每個規則都應包含清楚的 description
+4. **可擴展性**: 設計時考慮未來可能新增的驗算規則
+
+請開始分析計算邏輯！

@@ -244,13 +244,21 @@ class PaymentConditionEngine:
         
         conditions = []
         
-        # 從合約資訊中提取
-        contract_info = document_data.get("contract_info", {})
+        # 從合約資訊中提取（兼容新舊 Schema）
+        contract_info = (
+            document_data.get("contract_financials") or 
+            document_data.get("contract_info", {})
+        )
         payment_terms = contract_info.get("payment_terms", "")
         
         if payment_terms:
             parsed = self.parse_condition(payment_terms)
             conditions.append(parsed)
+        
+        # 如果文件中已有解析好的付款條件（新 Schema）
+        if "payment_conditions" in document_data:
+            for condition in document_data["payment_conditions"]:
+                conditions.append(condition)
         
         return conditions
 
